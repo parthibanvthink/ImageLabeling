@@ -1,6 +1,8 @@
 # pages/3_Validate_Labels.py
 
 import streamlit as st
+import os
+import glob
 from utils.validate_labels import validate_labels
 
 st.set_page_config(page_title="Validate Labels", layout="wide")
@@ -41,7 +43,7 @@ st.markdown('<div class="desc">Check for missing or empty label files in your tr
 image_dir = "dataset/images/train"
 label_dir = "dataset/labels/train"
 
-# Button
+# Button to trigger validation
 if st.button("Run Validation"):
     with st.spinner("Validating image-label consistency..."):
         result = validate_labels(image_dir, label_dir)
@@ -59,5 +61,17 @@ if st.button("Run Validation"):
     if not result["missing"] and not result["empty"]:
         st.success("🎉 All image-label pairs are valid!")
 
-# Optional: show total stats
+# 📂 Optional: show checked folder info
 st.caption("📂 Checked folder: `dataset/images/train` vs `dataset/labels/train`")
+
+# ✅ Labeled image check for navigation
+label_files = glob.glob(os.path.join(label_dir, "**/*.txt"), recursive=True)
+valid_labeled_count = sum(1 for f in label_files if os.path.getsize(f) > 0)
+
+if valid_labeled_count > 0:
+    st.markdown("---")
+    st.success(f"🔍 {valid_labeled_count} labeled images found.")
+    if st.button("👁️ View Labeled Images"):
+        st.switch_page("pages/6_View_Labeled_Images.py")
+else:
+    st.info("ℹ️ No labeled images with valid content found. Run Auto Labeling first.")
