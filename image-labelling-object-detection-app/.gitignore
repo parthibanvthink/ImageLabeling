@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.log
+
+# Streamlit
+.streamlit/
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# VSCode
+.vscode/
+
+# macOS
+.DS_Store
+
+# System files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Dataset and output folders
+dataset/images/train/
+dataset/images/val/
+dataset/labels/train/
+dataset/labels/val/
+runs/
+*.weights
+*.pt
+
+# Cache & temp
+*.tmp
+*.bak
+*.swp
+.cache/
+__pypackages__/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# YAML or JSON auto output
+*.yaml
+*.yml
+*.json
