@@ -22,7 +22,7 @@ st.markdown("""
         .error-box {
             font-family: monospace;
             font-size: 0.95rem;
-            background-color: #fff0f0;
+            background-color: grey;
             padding: 1rem;
             border-left: 6px solid red;
             border-radius: 5px;

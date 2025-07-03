@@ -21,7 +21,7 @@ st.markdown("""
         .label-log {
             font-family: monospace;
             font-size: 0.95rem;
-            background-color: #f9fafc;
+            background-color: grey;
             padding: 1rem;
             border-radius: 8px;
             max-height: 300px;
