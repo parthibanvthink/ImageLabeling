@@ -1,14 +1,24 @@
+# pages/6_View_Labeled_Images.py
+
 import streamlit as st
 import os
 import cv2
 import random
+import yaml
 
-CLASS_MAP = {
-    0: "Book",
-    1: "Bottle",
-    2: "Phone"
-}
+# ✅ Load class names from YAML
+def load_class_map(yaml_path="dataset/data.yaml"):
+    if not os.path.exists(yaml_path):
+        return {}
+    with open(yaml_path, "r") as f:
+        data = yaml.safe_load(f)
+    return {i: name for i, name in enumerate(data.get("names", []))}
 
+CLASS_MAP = load_class_map()
+
+print("Loaded CLASS_MAP:", CLASS_MAP)
+
+# ✅ UI styling
 st.set_page_config(page_title="Labeled Image Preview", layout="wide")
 
 st.markdown("""
@@ -36,13 +46,15 @@ st.markdown("""
 st.markdown('<div class="section-title">🔍 View Labeled Images</div>', unsafe_allow_html=True)
 st.markdown('<div class="note">Preview your labeled training images with bounding boxes and class names.</div>', unsafe_allow_html=True)
 
+# ✅ Directories
 image_dir = "dataset/images/train"
 label_dir = "dataset/labels/train"
 
-max_images = st.slider("How many images to preview?", 1, 50, 12)
+# ✅ Controls
+max_images = st.slider("How many images to preview?", 1, 500, 12)
 columns_per_row = st.selectbox("Images per row", [2, 3, 4], index=2)
 
-
+# ✅ Load label file
 def load_labels(label_file):
     boxes = []
     with open(label_file, "r") as f:
@@ -53,7 +65,7 @@ def load_labels(label_file):
                 boxes.append((int(cls_id), x, y, w, h))
     return boxes
 
-
+# ✅ Collect labeled images
 def collect_labeled_images():
     labeled = []
     for root, _, files in os.walk(image_dir):
@@ -66,7 +78,7 @@ def collect_labeled_images():
                     labeled.append((img_path, label_path))
     return labeled
 
-
+# ✅ Render images with bounding boxes
 labeled_images = collect_labeled_images()
 
 if not labeled_images:
@@ -87,14 +99,14 @@ else:
                     continue
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
                 h, w = image.shape[:2]
+
                 for cls_id, x, y, bw, bh in load_labels(label_path):
                     x1 = int((x - bw / 2) * w)
                     y1 = int((y - bh / 2) * h)
                     x2 = int((x + bw / 2) * w)
                     y2 = int((y + bh / 2) * h)
-                    label = CLASS_MAP.get(cls_id, f"Class {cls_id}")
+                    label = CLASS_MAP.get(cls_id, f"Class {cls_id}")  # ✅ Fixed class label from YAML
                     cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
                     cv2.putText(image, label, (x1, y1 - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
+
                 col.image(image, use_container_width=True, caption=os.path.basename(img_path))
-
-

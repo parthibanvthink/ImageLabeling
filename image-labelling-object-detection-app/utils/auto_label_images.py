@@ -1,66 +1,76 @@
 import os
-import cv2
 from ultralytics import YOLO
+import yaml
 from PIL import Image
 
-model = YOLO("yolov8n.pt")
+# # Load model
+# model = YOLO("yolov8n.pt")
 
+# New (higher accuracy)
+model = YOLO("yolov8x.pt")
+
+
+# Directories
 image_dir = "dataset/images/train"
 label_dir = "dataset/labels/train"
 os.makedirs(label_dir, exist_ok=True)
 
-def clean_dataset(directory):
-    """
-    Removes unreadable or corrupted images from the dataset.
-    """
-    removed = 0
-    for root, _, files in os.walk(directory):
-        for file in files:
-            path = os.path.join(root, file)
-            if file.lower().endswith((".jpg", ".jpeg", ".png")):
-                img = cv2.imread(path)
-                if img is None:
-                    os.remove(path)
-                    print(f"🧹 Removed invalid image: {path}")
-                    removed += 1
-    return removed
+# Load your class names from data.yaml
+def load_custom_class_map(yaml_path="dataset/data.yaml"):
+    if not os.path.exists(yaml_path):
+        return {}
+    with open(yaml_path, "r") as f:
+        data = yaml.safe_load(f)
+    return {name: i for i, name in enumerate(data.get("names", []))}
+
+CUSTOM_CLASS_MAP = load_custom_class_map()
+ALLOWED_CLASSES = set(CUSTOM_CLASS_MAP.keys())
+
+def is_valid_image(path):
+    try:
+        img = Image.open(path)
+        img.verify()  # Checks for corruption
+        return True
+    except Exception:
+        return False
 
 def label_image(img_path, label_output_dir):
     filename = os.path.basename(img_path)
-    try:
-        results = model.predict(source=img_path, save=False, conf=0.25, verbose=False)
-    except Exception as e:
-        print(f"❌ Error processing {filename}: {e}")
-        return f"❌ Failed to process: {filename}"
+
+    # 🔒 Check if image is valid before proceeding
+    if not is_valid_image(img_path):
+        print(f"⚠️ Skipped invalid or unreadable image: {filename}")
+        return
+
+    # Run prediction
+    results = model.predict(source=img_path, save=False, conf=0.15, verbose=False)
 
     for result in results:
         if len(result.boxes) == 0:
             print(f"⚠️ No detections for {filename}, skipping label.")
-            return f"⚠️ No detection: {filename}"
+            return
 
         os.makedirs(label_output_dir, exist_ok=True)
         label_path = os.path.join(label_output_dir, os.path.splitext(filename)[0] + ".txt")
 
         with open(label_path, "w") as f:
             for box in result.boxes:
-                cls = int(box.cls[0])
+                class_name = model.names[int(box.cls[0])]
+                if class_name not in ALLOWED_CLASSES:
+                    continue
+                cls_id = CUSTOM_CLASS_MAP[class_name]
+
                 x_center, y_center, width, height = box.xywh[0]
                 x_center /= result.orig_shape[1]
                 y_center /= result.orig_shape[0]
                 width /= result.orig_shape[1]
                 height /= result.orig_shape[0]
-                f.write(f"{cls} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}\n")
+
+                f.write(f"{cls_id} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}\n")
         print(f"✅ Labeled: {filename}")
-        return f"✅ Labeled: {filename}"
 
 def run_auto_labeling():
     logs = []
-
-    # ✅ Clean up unreadable/corrupted images first
-    removed_count = clean_dataset(image_dir)
-    logs.append(f"🧹 Removed {removed_count} unreadable/corrupt images.")
-
-    # ✅ Start labeling
     for entry in os.listdir(image_dir):
         full_path = os.path.join(image_dir, entry)
 
@@ -69,12 +79,10 @@ def run_auto_labeling():
                 if img_file.lower().endswith((".jpg", ".jpeg", ".png")):
                     img_path = os.path.join(full_path, img_file)
                     label_subdir = os.path.join(label_dir, entry)
-                    log = label_image(img_path, label_subdir)
-                    if log:
-                        logs.append(log)
+                    label_image(img_path, label_subdir)
+                    logs.append(f"Labeled: {img_file}")
         elif entry.lower().endswith((".jpg", ".jpeg", ".png")):
-            log = label_image(full_path, label_dir)
-            if log:
-                logs.append(log)
+            label_image(full_path, label_dir)
+            logs.append(f"Labeled: {entry}")
 
     return logs

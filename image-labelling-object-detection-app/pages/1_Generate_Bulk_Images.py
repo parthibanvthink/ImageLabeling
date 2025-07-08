@@ -41,7 +41,7 @@ st.markdown(
 )
 
 # Inputs
-classes_input = st.text_input("Enter Class Names (comma-separated)", value="book, bottle, cell phone")
+classes_input = st.text_input("Enter Class Names (comma-separated)", value="book, bottle, phone")
 num_images = st.number_input("Images per class", min_value=10, max_value=1000, value=100)
 download_btn = st.button("Download Images")
 

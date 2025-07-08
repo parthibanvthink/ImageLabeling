@@ -1,4 +1,4 @@
-# pages/5_Generate_data_yaml.py
+# pages/2_Generate_data_yaml.py
 
 import streamlit as st
 from utils.generate_data_yaml import generate_data_yaml
@@ -27,15 +27,16 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# UI
+# Title and description
 st.markdown('<div class="section-title">📄 Generate data.yaml</div>', unsafe_allow_html=True)
-st.markdown('<div class="desc">This will auto-create your YOLO training config file from the train folder structure.</div>', unsafe_allow_html=True)
+st.markdown('<div class="desc">This will auto-create your YOLO training config file from the folder structure of your training dataset.</div>', unsafe_allow_html=True)
 
 if st.button("Generate YAML"):
-    yaml_path, content = generate_data_yaml()
-    st.success(f"✅ `data.yaml` successfully created at `{yaml_path}`!")
+    yaml_path, content_text = generate_data_yaml()
 
-    st.markdown("Preview:")
+    st.success(f"✅ `data.yaml` created successfully at `{yaml_path}`")
+
+    st.markdown("### 📝 Preview:")
     st.markdown('<div class="code-block">', unsafe_allow_html=True)
-    st.code(content, language="yaml")
+    st.code(content_text, language="yaml")
     st.markdown("</div>", unsafe_allow_html=True)
